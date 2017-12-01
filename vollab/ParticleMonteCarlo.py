@@ -98,36 +98,6 @@ class SilvermanDelta(object): #pylint: disable=too-few-public-methods
         return self._kernel(value / self.bandwidth) / self.bandwidth
 
 
-def expected_volatility(spot,
-                        maturity_time_in_years,
-                        forward_points,
-                        particle_forwards,
-                        particle_stochastic_variance):
-    """
-    Estimate expected volatility as a function of the forward using Nadaraya-Watson.
-
-    Args:
-        spot: Today's price.
-        maturity_time_in_years: The maturity time under consideration.
-        forward_points: The knot points at which the expectation is estimated.
-        particle_forwards: The particle forwards.
-        particle_stochastic_variance: The particle stochastic variance.
-
-    Returns: Expected volatility as a function of the forward
-    """
-    delta_func = Delta(len(particle_forwards), spot, maturity_time_in_years, 0.3)
-    sigma = np.empty([len(forward_points)])
-
-    for index, forward in enumerate(forward_points):
-        delta_array = np.array([delta_func(forward - f) for f in particle_forwards])
-        variance_array = np.array([delta * variance
-                                   for delta, variance in
-                                   zip(delta_array, particle_stochastic_variance)])
-        sigma[index] = np.sqrt(variance_array.sum() / delta_array.sum())
-
-    return CubicSpline(forward_points, sigma)
-
-
 def expected_volatility_kernel(forward_points,
                                particle_forwards,
                                particle_stochastic_variance):
@@ -154,16 +124,16 @@ def expected_volatility_kernel(forward_points,
     return CubicSpline(forward_points, sigma)
 
 
-def inverse_effective_volatility(delta_func,
-                                 forward_points,
-                                 particle_forwards,
-                                 particle_stochastic_variance):
+def expected_volatility(delta_func,
+                        forward_points,
+                        particle_forwards,
+                        particle_stochastic_variance):
     """
     Calculate the (inverse of) effective volatility for the forward points.
 
     Args:
-        delta_func:
-        forward_points:
+        delta_func: The delta function.
+        forward_points: The points at which to estimate effective volatility.
         particle_forwards: The knot points at which the expectation is estimated.
         particle_stochastic_variance: The particle stochastic variance.
 
@@ -177,8 +147,7 @@ def inverse_effective_volatility(delta_func,
         variance_sum = np.array(
             [delta * variance
              for delta, variance in zip(delta_array, particle_stochastic_variance)]).sum()
-        if variance_sum > 0.0:
-            ret[index] = np.sqrt(delta_sum / variance_sum)
+        ret[index] = np.sqrt(variance_sum / delta_sum)
     return ret
 
 
@@ -210,10 +179,10 @@ class ParticleMonteCarlo(object): #pylint: disable=too-many-instance-attributes,
 
     def sample(self):
         """
-        Calculate a matrix of call prices, at each time step of the Monte Carlo and at each strike.
+        Sample the Monte Carlo.
 
         Returns:
-            A matrix of call prices at the given strikes and tenors.
+            Samples paths of the process and the leverage.
 
         """
         # run monte-carlo
@@ -237,13 +206,13 @@ class ParticleMonteCarlo(object): #pylint: disable=too-many-instance-attributes,
             forward[idx_time][:] = np.exp(log_forward)
             # update leverage
             delta_func = Delta(self.num_particles, self.monte_carlo.spot, time, 0.3)
-            inverse_expected_vol = inverse_effective_volatility(delta_func,
-                                                                self.strikes,
-                                                                forward[idx_time],
-                                                                variance[idx_time])
+            expected_vol = expected_volatility(delta_func,
+                                               self.strikes,
+                                               forward[idx_time],
+                                               variance[idx_time])
             local_vol = np.array([self.local_vol_surface(f, time)
                                   for f in self.strikes])
-            spline = CubicSpline(self.strikes, local_vol * inverse_expected_vol)
+            spline = CubicSpline(self.strikes, local_vol / expected_vol)
             leverage[idx_time][:] = np.array([spline(f) for f in forward[idx_time]])
             # increment times
             idx_time += 1

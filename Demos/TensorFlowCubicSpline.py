@@ -19,8 +19,6 @@ def tridiag(lower, diag, upper):
     """
     Make matrix from tri-diagonal representation.
 
-    No tridiag solve in Tensorflow.
-
     Args:
         lower: Lower diagonal.
         diag: The diagonal.
@@ -41,7 +39,7 @@ def cubic_spline_xdeps(x_axis):
         x_axis: The independent variable.
 
     Returns:
-        A tuple, The A matrix, the differences between consecutive axis values, two constants.
+        A tuple, The A matrix, the differences between consecutive axis values, three constants.
     """
     # pylint: disable=invalid-name
 
@@ -100,6 +98,7 @@ def cubic_spline_coefficients(x, y_tensor): # pylint: disable=too-many-locals
     B_tensor = tf.reshape(B_tensor, [n, 1])
 
     A_tensor = tf.constant(A)
+    # No tridiag solve in Tensorflow.
     s_tensor = tf.matrix_solve(A_tensor, B_tensor)
     flat_s_tensor = tf.reshape(s_tensor, [n])
 
@@ -114,7 +113,7 @@ def cubic_spline_coefficients(x, y_tensor): # pylint: disable=too-many-locals
     # pylint: enable=invalid-name
 
 
-def expand(vec, num_cols):
+def tile_columns(vec, num_cols):
     """
     Build a matrix tensor of num_cols copies of a vector.
     Args:
@@ -145,54 +144,37 @@ def compute_range_selection(axis, x): # pylint: disable=too-many-locals
     # pylint: disable=invalid-name
     axis_lower = axis[:-1]
     axis_upper = axis[1:]
+
     n = len(axis_lower)
     nx = int(x.get_shape()[0])
+
     al = tf.constant(axis_lower)
-    alx = expand(al, nx)
+    alx = tile_columns(al, nx)
+
     au = tf.constant(axis_upper)
-    aux = expand(au, nx)
+    aux = tile_columns(au, nx)
 
-    xx = tf.tile(x, [n])
-    xxx = tf.reshape(xx, [n, nx])
+    xxx = tf.reshape(tf.tile(x, [n]), [n, nx])
 
-    cond1 = tf.greater_equal(xxx, alx)
-    cond2 = tf.less(xxx, aux)
-    cond = tf.logical_and(cond1, cond2)
-    return tf.transpose(cond)
+    return tf.transpose(tf.logical_and(tf.less(xxx, aux), tf.greater_equal(xxx, alx)))
     # pylint: enable=invalid-name
 
 
-def select(cond, items): # pylint: disable=too-many-locals
+def select(condition, items): # pylint: disable=too-many-locals
     """
 
     Args:
-        cond: Bool matrix indicating the item intervals.
+        condition: Bool matrix indicating the item intervals.
         items: The items to select from based on the interval, lenth len(axis)-1
 
     Returns:
-        A vector of length x, of the items in q corresponding to intervals axis.
+        A vector of length x, of the items in q corresponding to the condition.
 
     """
     # pylint: disable=invalid-name
-    num_rows = int(cond.get_shape()[0])
-    num_cols = int(cond.get_shape()[1])
-    return tf.boolean_mask(tf.reshape(tf.tile(items, [num_rows]), [num_rows, num_cols]), cond)
-    # pylint: enable=invalid-name
-
-
-def range_selection(axis, points, items): # pylint: disable=too-many-locals
-    """
-
-    Args:
-        axis: A strictly increasing vector of floats, describing intervals.
-        points: The points that are binned into the intervals.
-        items: The items to select from based on the interval, lenth len(axis)-1
-
-    Returns:
-        A vector of length x, of the items in items corresponding to intervals axis.
-
-    """
-    return select(compute_range_selection(axis, points), items)
+    num_rows = int(condition.get_shape()[0])
+    num_cols = int(condition.get_shape()[1])
+    return tf.boolean_mask(tf.reshape(tf.tile(items, [num_rows]), [num_rows, num_cols]), condition)
     # pylint: enable=invalid-name
 
 
@@ -245,20 +227,20 @@ def cubic_spline(independent_variable, dependent_variable, points, np_dtype=np.f
     c2_coeffs_tensor = select(mask, coefficients[2])
     c3_coeffs_tensor = select(mask, coefficients[3])
 
-    xl_tensor = tf.constant(independent_variable[:-1])
-    xls_tensor = range_selection(independent_variable, points, xl_tensor)
-    x_dif_tensor = points - xls_tensor
+    lower_bounds = tf.constant(independent_variable[:-1])
+    deltas = points - select(mask, lower_bounds)
 
     return cubic(c0_coeffs_tensor,
                  c1_coeffs_tensor,
                  c2_coeffs_tensor,
                  c3_coeffs_tensor,
-                 x_dif_tensor)
+                 deltas)
 
 
-def test():
+def main():
     """
-    Plot an example fitting through sinusoidal, with 80,000 data points.
+    Plot an example fitting through sinusoidal, with 80,000 data points,
+     and compute gradients of the interpolated points with respect to the dependent variable.
 
     """
     # pylint: disable=invalid-name
@@ -273,30 +255,25 @@ def test():
     xs_tensor = tf.constant(xs)
     ys_tensor = cubic_spline(x, y_tensor, xs_tensor)
 
-    grads = tf.gradients(ys_tensor, y_tensor)
+    gradients_tensor = tf.gradients(ys_tensor, y_tensor)
 
     session = tf.Session()
-    res = session.run([ys_tensor, grads])
+    res = session.run([ys_tensor, gradients_tensor])
     ys = res[0]
 
     print "Num data points:", len(xs) # 80000 data points
+    print "Gradients:"
     print res[1]
 
     plt.figure(figsize=(6.5, 4))
     plt.plot(x, y, 'o', label='data')
-    plt.plot(xs, np.sin(xs), label='true')
-    plt.plot(xs, ys, 'x', label='my')
+    plt.plot(xs, np.sin(xs), label='bench')
+    plt.plot(xs, ys, 'x', label='spline')
 
     plt.xlim(-0.5, 9.5)
     plt.legend(loc='lower right', ncol=2)
     plt.show()
     # pylint: enable=invalid-name
-
-
-def main():
-    """ The main entry point function.
-    """
-    test()
 
 
 if __name__ == "__main__":
