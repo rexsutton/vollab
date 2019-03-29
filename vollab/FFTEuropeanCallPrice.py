@@ -244,7 +244,6 @@ class CallPriceCalculator(object):
         self.log_strike_axis = [(i - self.offset) * self.lmbda for i in range(0, num_points)]
         self.strike_axis = [np.exp(log_strike) for log_strike in self.log_strike_axis]
 
-
     def compute_integrand_sequence(self,
                                    market_params,
                                    maturity_time_years,

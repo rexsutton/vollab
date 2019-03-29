@@ -7,7 +7,9 @@
 """
 # for f in *.py ; do echo "from .${f%.py} import *" ; done
 from .FFTEuropeanCallPrice import *
+from .GBMMonteCarlo import *
 from .HestonMonteCarlo import *
+#from .CudaHestonMonteCarlo import *
 from .ImpliedVolatilitySurface import *
 from .LocalVolatilitySurface import *
 from .LocalVolMonteCarlo import *

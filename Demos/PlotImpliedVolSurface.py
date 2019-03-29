@@ -21,7 +21,6 @@ import env
 import vollab as vl
 
 
-
 def plot_surface(x_axis, y_axis, z_values, tol=1e-8):
     """
         Plot a surface using MatPlotLib.
@@ -46,9 +45,8 @@ def plot_surface(x_axis, y_axis, z_values, tol=1e-8):
     sub.set_xlabel("Strike")
     sub.set_ylabel("Maturity")
     sub.set_zlabel("Volatility")
-    print "Close the plot window to continue..."
+    print("Close the plot window to continue...")
     plt.show()
-
 
 
 def plot_implied_vol(characteristic_function_name, params):
@@ -75,7 +73,7 @@ def plot_implied_vol(characteristic_function_name, params):
                                                                        market_params,
                                                                        strike_selector,
                                                                        tenors)
-    # numerical noise in flat volatility of BlackScholes causes garbage in MatPlotLib plot.
+    # numerical noise in flat volatility of Black-Scholes causes garbage in MatPlotLib plot.
     plot_surface(selected_strikes,
                  tenors,
                  np.transpose(surface),

@@ -47,7 +47,7 @@ def plot_surface(x_axis, y_axis, z_values, tol=1e-8):
     sub.set_xlabel("Strike")
     sub.set_ylabel("Maturity")
     sub.set_zlabel("Volatility")
-    print "Close the plot window to continue..."
+    print("Close the plot window to continue...")
     plt.show()
 
 

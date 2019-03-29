@@ -381,7 +381,7 @@ def test_surface():
         res = session.run(call_price_surface)
     # plot results
     plot_surface(strikes, time, np.transpose(res))
-    print "Close the plot window to continue..."
+    print("Close the plot window to continue...")
     plt.show()
 
 
@@ -461,12 +461,12 @@ def test_gradients():
     with tf.Session(config=config) as session:
         session.run(tf.global_variables_initializer())
         res = session.run([vol_params, loss, grads])
-        print "vol_params:"
-        print res[0]
-        print "loss:"
-        print res[1]
-        print "grads:"
-        print res[2]
+        print("vol_params:")
+        print(res[0])
+        print("loss:")
+        print(res[1])
+        print("grads:")
+        print(res[2])
 
 
 def calibrate():
@@ -485,8 +485,8 @@ def calibrate():
         #save_path = saver.save(session, "model.ckpt")
         #print "Model saved in file: %s" % save_path
         res = session.run(vol_params)
-        print "Variables:"
-        print res
+        print("Variables:")
+        print(res)
 
 
 def main():

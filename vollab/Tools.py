@@ -22,7 +22,7 @@ def print_log(message):
     Args:
         message (str): The message.
     """
-    print logstring(), message
+    print(logstring(), message)
 
 
 def print_matrix_shape(message, matrix):
@@ -31,7 +31,7 @@ def print_matrix_shape(message, matrix):
         message (str): The message.
         matrix (matrix): The matrix.
     """
-    print message, len(matrix), len(matrix[0])
+    print(message, len(matrix), len(matrix[0]))
 
 
 def print_vector_shape(message, vector):
@@ -40,4 +40,4 @@ def print_vector_shape(message, vector):
         message (str): The first parameter.
         vector (vector): The vector.
     """
-    print message, len(vector)
+    print(message, len(vector))

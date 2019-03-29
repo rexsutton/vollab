@@ -261,9 +261,9 @@ def main():
     res = session.run([ys_tensor, gradients_tensor])
     ys = res[0]
 
-    print "Num data points:", len(xs) # 80000 data points
-    print "Gradients:"
-    print res[1]
+    print("Num data points:", len(xs)) # 80000 data points
+    print("Gradients:")
+    print(res[1])
 
     plt.figure(figsize=(6.5, 4))
     plt.plot(x, y, 'o', label='data')

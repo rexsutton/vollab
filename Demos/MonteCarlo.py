@@ -7,6 +7,7 @@
 
    Either with Heston model,
         compare plain vanilla option prices obtained via FFT and Monte Carlo,
+        compare plain vanilla option prices obtained via FFT and Monte Carlo performed in GPU,
         compare plain vanilla option prices obtained via FFT with particle Monte Carlo,
 
     or for any model (with characteristic function),
@@ -65,6 +66,20 @@ def plot_surface(x_axis, y_axis, z_values, tol=1e-8):
     sub.set_zlabel("Price")
 
 
+def compute_sim_call_price(strike, simulated_process):
+    """
+    Compute call price from simulated values.
+    Args:
+        strike: The strike.
+        simulated_process: Vector of simulated values by time.
+
+    Returns: The call prices.
+
+    """
+    temp = simulated_process - strike
+    return np.mean(np.where(np.less(temp, 0.0), 0.0, temp))
+
+
 def compute_sim_call_prices(strikes, simulated_process):
     """
     Compute call prices from simulated values.
@@ -75,16 +90,11 @@ def compute_sim_call_prices(strikes, simulated_process):
     Returns: A matrix of call prices.
 
     """
-    sim_call_prices = []
-    for simulations in simulated_process:
-        sim_call_prices_at_tenor = []
-        for strike in strikes:
-            temp = 0.0
-            for process_value in simulations:
-                intrinsic = process_value - strike
-                temp += intrinsic if intrinsic > 0.0 else 0.0
-            sim_call_prices_at_tenor.append(temp / len(simulations))
-        sim_call_prices.append(sim_call_prices_at_tenor)
+    sim_call_prices = np.empty([len(simulated_process), len(strikes)])
+    for idx_sim, simulations in enumerate(simulated_process):
+        for idx_strike, strike in enumerate(strikes):
+            sim_call_prices[idx_sim, idx_strike] = compute_sim_call_price(strike, simulations)
+
     return sim_call_prices
 
 
@@ -124,7 +134,47 @@ def test_heston(params):
     # plot_surface(selected_strikes, tenors, np.transpose(call_prices_by_tenor_by_strike))
     # abs_errors = np.array(sim_call_prices) - np.array(call_prices_by_tenor_by_strike)
     # plot_surface(selected_strikes, tenors, np.transpose(abs_errors), tol=1e-8)
-    print "Close the plot window to continue..."
+    print("Close the plot window to continue...")
+    plt.show()
+
+
+def test_heston_cuda(params):
+    """
+    For the Heston model compare plain vanilla option prices obtained via FFT and Monte Carlo.
+    Args:
+        params: A dictionary of parameter values used to override defaults.
+    """
+    # create the Monte Carlo
+    monte_carlo = vl.CudaHestonMonteCarlo()
+    monte_carlo.__dict__.update(params)
+    # create market parameters
+    market_params = vl.MarketParams()
+    market_params.__dict__.update(params)
+    # create the characteristic function
+    characteristic_function = vl.create_characteristic_function('Heston')
+    characteristic_function.__dict__.update(params)
+    # select the range of strikes to plot
+    strike_selector = functools.partial(vl.select_strike,
+                                        0.7 * market_params.spot,
+                                        1.3 * market_params.spot)
+    # generate a surface of call prices using FFT
+    tenors = monte_carlo.time_axis
+    selected_strikes, tenors, call_prices_by_tenor_by_strike \
+        = vl.compute_call_prices_matrix(characteristic_function,
+                                        market_params,
+                                        strike_selector,
+                                        tenors)
+    # run simulation
+    simulated_stock = monte_carlo.sample()
+    # plot simulation
+    plot_paths(simulated_stock)
+    sim_call_prices = compute_sim_call_prices(selected_strikes, simulated_stock)
+    # plot surfaces
+    plot_surface(selected_strikes, tenors, np.transpose(sim_call_prices))
+    # plot_surface(selected_strikes, tenors, np.transpose(call_prices_by_tenor_by_strike))
+    # abs_errors = np.array(sim_call_prices) - np.array(call_prices_by_tenor_by_strike)
+    # plot_surface(selected_strikes, tenors, np.transpose(abs_errors), tol=1e-8)
+    print("Close the plot window to continue...")
     plt.show()
 
 
@@ -200,7 +250,7 @@ def test_hpmc(params):
     # plot_surface(selected_strikes,
     #              tenors,
     #              np.transpose(np.array(sim_call_prices) - np.array(call_prices_by_fft)))
-    print "Close the plot window to continue..."
+    print("Close the plot window to continue...")
     plt.show()
 
 
@@ -227,7 +277,7 @@ def test_local_vol(model, params):
     # plot_surface(selected_strikes,
     #              tenors,
     #              np.transpose(np.array(sim_call_prices) - np.array(call_prices_by_fft)))
-    print "Close the plot window to continue..."
+    print("Close the plot window to continue...")
     plt.show()
 
 
@@ -241,6 +291,7 @@ def main():
                         choices=["BlackScholes",
                                  "Heston",
                                  "HestonMC",
+                                 "HestonMCCuda",
                                  "HestonPMC",
                                  "VarianceGamma"],
                         default="HestonMC")
@@ -253,6 +304,8 @@ def main():
     # Heston has specialized implementation for comparison.
     if args.model == "HestonMC":
         test_heston(args.params)
+    elif args.model == "HestonMCCuda":
+        test_heston_cuda(args.params)
     elif args.model == "HestonPMC":
         test_hpmc(args.params)
     else:
