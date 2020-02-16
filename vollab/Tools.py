@@ -5,8 +5,40 @@
 
     Small re-usable functions.
 """
-
 import datetime
+import numpy as np
+
+
+def compute_sim_call_price(strike, simulated_process):
+    """
+    Compute call price from simulated values.
+    Args:
+        strike: The strike.
+        simulated_process: Vector of simulated values by time.
+
+    Returns: The call prices.
+
+    """
+    temp = simulated_process - strike
+    return np.mean(np.where(np.less(temp, 0.0), 0.0, temp))
+
+
+def compute_sim_call_prices(strikes, simulated_process):
+    """
+    Compute call prices from simulated values.
+    Args:
+        strikes: The strikes.
+        simulated_process: Matrix of simulated values by time.
+
+    Returns: A matrix of call prices.
+
+    """
+    sim_call_prices = np.empty([len(simulated_process), len(strikes)])
+    for idx_sim, simulations in enumerate(simulated_process):
+        for idx_strike, strike in enumerate(strikes):
+            sim_call_prices[idx_sim, idx_strike] = compute_sim_call_price(strike, simulations)
+
+    return sim_call_prices
 
 
 def logstring():

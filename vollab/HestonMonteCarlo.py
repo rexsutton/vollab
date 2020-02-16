@@ -112,7 +112,6 @@ class HestonMonteCarlo(object): #pylint: disable=too-many-instance-attributes
 
     def sample(self):
         """
-
         Sample the Heston model.
 
         Returns:

@@ -1,19 +1,8 @@
-Python laboratory for testing new models for volatility modelling in mathematical finance.
-
-Particle calibration ---> new models :-)
-
+Python laboratory for testing volatility modelling in mathematical finance.
 
 Dependencies:
 
 Lets be rational for fast implied volatility solver.
 
-@article{jackel2015let,
-  title={Let's be rational},
-  author={J{\"a}ckel, Peter},
-  journal={Wilmott},
-  volume={2015},
-  number={75},
-  pages={40--53},
-  year={2015},
-  publisher={Wiley Online Library}
-}
+Jäckel, Peter. "Let's be rational." Wilmott 2015.75 (2015): 40-53.
+

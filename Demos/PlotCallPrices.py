@@ -16,38 +16,8 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
-from mpl_toolkits.mplot3d import Axes3D
-
 import env
 import vollab as vl
-
-
-def plot_surface(x_axis, y_axis, z_values, tol=1e-8):
-    """
-        Plot a surface using MatPlotLib.
-        Tolerance controls what appears to be a bug when plotting flat surfaces.
-    Args:
-        x_axis: The x axis.
-        y_axis: The y axis.
-        z_values: The matrix of surface values.
-        tol: Tolerance for rounding numbers to precision.
-    """
-    x_mesh, y_mesh = np.meshgrid(x_axis, y_axis, indexing='ij')
-    z_matrix = np.zeros([len(x_axis), len(y_axis)], dtype=np.float64)
-
-    for i in range(0, len(x_axis)):
-        for j in range(0, len(y_axis)):
-            z_matrix[i, j] = np.floor(z_values[i][j] / tol)*tol
-
-    fig = plt.figure()
-    sub = fig.add_subplot(111, projection='3d')
-    sub.plot_surface(x_mesh, y_mesh, z_matrix)
-    sub.title.set_text("Call prices as a function of strike and maturity.")
-    sub.set_xlabel("Strike")
-    sub.set_ylabel("Maturity")
-    sub.set_zlabel("Price")
-    print("Close the plot window to continue...")
-    plt.show()
 
 
 def plot_call_prices(characteristic_function_name, params):
@@ -68,13 +38,17 @@ def plot_call_prices(characteristic_function_name, params):
     strike_selector = functools.partial(vl.select_strike,
                                         0.7 * market_params.spot,
                                         1.3 * market_params.spot)
-    # # generate a surface __call__ the following maturity times in years
+    # generate a surface at the following maturity times in years
     tenors = [1.0, 2.0, 3.0, 4.0, 5.0]
     selected_strikes, tenors, surface = vl.compute_call_prices_matrix(characteristic_function,
                                                                       market_params,
                                                                       strike_selector,
                                                                       tenors)
-    plot_surface(selected_strikes, tenors, np.transpose(surface))
+    vl.plot_surface(selected_strikes, tenors, np.transpose(surface),
+                    "Call prices as a function of strike and maturity.",
+                    "Strike", "Maturity", "Price")
+    print("Close the plot window to continue...")
+    plt.show()
 
 
 def main():
@@ -83,7 +57,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--model",
                         help="The stochastic model.",
-                        default="Heston")
+                        choices=vl.characteristic_function_names(),
+                        default="BlackScholes")
     parser.add_argument("-p", "--params",
                         help="The parameter dictionary.",
                         default="{}",

@@ -15,7 +15,7 @@ import numpy as np
 
 from scipy.interpolate import CubicSpline
 
-import vollab.ImpliedVolatilitySurface as vl
+from .ImpliedVolatilitySurface import *
 
 
 def change_variables(market_params, maturity_time, strikes, smile):
@@ -80,8 +80,8 @@ def compute_denominator(log_strike, variance, deriv_1, deriv_2):
     """
     return 1.0 - (log_strike * deriv_1 / variance) \
            + 0.25 * (-0.25 - (1.0 / variance)
-                     + (log_strike * log_strike / variance * variance))\
-             * (deriv_1 * deriv_1) \
+                     + (log_strike * log_strike / variance * variance)) \
+           * (deriv_1 * deriv_1) \
            + 0.5 * deriv_2
 
 
@@ -178,10 +178,10 @@ def compute_local_vol_matrix(characteristic_function,
 
     """
     strikes, maturity_times, implied_vol_surface = \
-        vl.compute_implied_vol_surface(characteristic_function,
-                                       market_params,
-                                       strike_selector,
-                                       maturity_times)
+        compute_implied_vol_surface(characteristic_function,
+                                    market_params,
+                                    strike_selector,
+                                    maturity_times)
 
     denom_matrix = compute_denominator_matrix(market_params,
                                               strikes,

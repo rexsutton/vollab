@@ -12,15 +12,9 @@
 
     The code is based on the paper of Carr-Madan:-
 
-    @article{carr1999option,
-      title={Option valuation using the fast Fourier transform},
-      author={Carr, Peter and Madan, Dilip},
-      journal={Journal of computational finance},
-      volume={2},
-      number={4},
-      pages={61--73},
-      year={1999}
-    }
+    Carr, Peter, and Dilip Madan.
+    "Option valuation using the fast Fourier transform." Journal of computational finance 2.4 (1999): 61-73.
+
 """
 
 import numpy as np
@@ -30,6 +24,7 @@ class MarketParams(object):  # pylint: disable=too-few-public-methods
     """
         Encapsulate market parameters in a structure.
     """
+
     def __init__(self, spot=50.0, short_rate=0.0, dividend_yield=0.0):
         """
             Member-wise initialisation.
@@ -62,6 +57,7 @@ class BlackScholesCharacteristicFunction(object):  # pylint: disable=too-few-pub
         The characteristic function of the underyling under the Black-Scholes model.
 
     """
+
     def __init__(self, sigma=0.2):
         """
             Simple initialisation.
@@ -95,7 +91,9 @@ class HestonCharacteristicFunction(object):  # pylint: disable=too-few-public-me
     """
         The characteristic function of the underyling under the Heston stochastic volatility model.
     """
-    def __init__(self, nu=0.0174, lmbda=1.3253, nu_bar=0.0354, eta=0.3877, rho=-0.7165): #pylint: disable=too-many-arguments
+
+    def __init__(self, nu=0.0174, lmbda=1.3253, nu_bar=0.0354, eta=0.3877,
+                 rho=-0.7165):  # pylint: disable=too-many-arguments
         """
             Simple initialisation.
         Args:
@@ -105,7 +103,7 @@ class HestonCharacteristicFunction(object):  # pylint: disable=too-few-public-me
             eta : The volatility of variance.
             rho: The correlation between volatility and the underlying.
         """
-        self.nu = nu #pylint: disable=invalid-name
+        self.nu = nu  # pylint: disable=invalid-name
         self.nu_bar = nu_bar
         self.eta = eta
         self.lmbda = lmbda
@@ -133,20 +131,21 @@ class HestonCharacteristicFunction(object):  # pylint: disable=too-few-public-me
         temp2 = np.exp(-1.0 * d_variable * maturity_time_years)
         temp3 = 1.0 - (g2_variable * temp2)
         temp4 = np.exp(i * variable * (
-            np.log(market_params.spot) + (
+                np.log(market_params.spot) + (
                 (market_params.short_rate - market_params.dividend_yield) * maturity_time_years)))
         temp5 = (self.nu_bar * self.lmbda / (self.eta * self.eta)) * (
-            (temp1 * maturity_time_years) - (2.0 * np.log(temp3 / (1.0 - g2_variable))))
+                (temp1 * maturity_time_years) - (2.0 * np.log(temp3 / (1.0 - g2_variable))))
         temp6 = ((self.nu) / (self.eta * self.eta)) * temp1 * (1.0 - temp2) / temp3
 
         return temp4 * np.exp(temp5) * np.exp(temp6)
 
 
-class VarianceGammaCharacteristicFunction(object): # pylint: disable=too-few-public-methods
+class VarianceGammaCharacteristicFunction(object):  # pylint: disable=too-few-public-methods
     """
         The characteristic function of the underyling under the Variance-Gamma model.
 
     """
+
     def __init__(self, theta=-0.14, nu=0.2, sigma=0.12):
         """
             Member-wise initialisation.
@@ -156,7 +155,7 @@ class VarianceGammaCharacteristicFunction(object): # pylint: disable=too-few-pub
             sigma:
         """
         self.theta = theta
-        self.nu = nu  #pylint: disable=invalid-name
+        self.nu = nu  # pylint: disable=invalid-name
         self.sigma = sigma
         self.omega = np.log(1.0 - (theta * nu) - (sigma * sigma * nu * 0.5)) / nu
 
@@ -174,11 +173,11 @@ class VarianceGammaCharacteristicFunction(object): # pylint: disable=too-few-pub
         """
         i = complex(0.0, 1.0)
         tmp0 = np.log(market_params.spot) + (
-            maturity_time_years * (market_params.short_rate
-                                   - market_params.dividend_yield
-                                   + self.omega))
+                maturity_time_years * (market_params.short_rate
+                                       - market_params.dividend_yield
+                                       + self.omega))
         tmp1 = np.exp(i * variable * tmp0)
-        tmp2 = 1.0 - (i * self.theta * self.nu * variable)\
+        tmp2 = 1.0 - (i * self.theta * self.nu * variable) \
                + (0.5 * self.sigma * self.sigma * self.nu * variable * variable)
         tmp3 = np.power(tmp2, (maturity_time_years / self.nu))
         tmp4 = tmp1 / tmp3
@@ -226,6 +225,7 @@ class CallPriceCalculator(object):
     """
         Function object for calculating European call option prices as a function of strike.
     """
+
     def __init__(self, num_points, lmbda, alpha):
         """
 
@@ -312,6 +312,22 @@ class CallPriceCalculator(object):
         return self.apply_multipliers(market_params, maturity_time_years, values)
 
 
+def _create_factory():
+    return {"BlackScholes": BlackScholesCharacteristicFunction,
+            "Heston": HestonCharacteristicFunction,
+            "VarianceGamma": VarianceGammaCharacteristicFunction}
+
+
+def characteristic_function_names():
+    """
+        Get the names of the known characteristic functions.
+
+    Returns: A list of names of the known characteristic functions.
+
+    """
+    return [k for k in _create_factory().keys()]
+
+
 def create_characteristic_function(name):
     """
         Factory for characteristic function.
@@ -321,9 +337,7 @@ def create_characteristic_function(name):
         The characteristic function with default parameters.
 
     """
-    factory = {"BlackScholes": BlackScholesCharacteristicFunction,
-               "Heston": HestonCharacteristicFunction,
-               "VarianceGamma": VarianceGammaCharacteristicFunction}
+    factory = _create_factory()
     try:
         return factory[name]()
     except:

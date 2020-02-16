@@ -8,7 +8,9 @@
 
 """
 import numpy as np
+
 from scipy.interpolate import CubicSpline
+
 
 class SplineSurface(object):
     """
@@ -40,6 +42,9 @@ class SplineSurface(object):
             surface_matrix: The surface matrix.
             y_fine_axis: Co-ordinates to fill in the surface using cross interpolation
         """
+        self.x_axis = x_axis
+        self.y_axis = y_axis
+        self.surface_matrix = surface_matrix
 
         self.y_lookup = dict()
         for y_coord, values in zip(y_axis, surface_matrix):
@@ -60,7 +65,6 @@ class SplineSurface(object):
                         values_by_x[i] = self.x_lookup[self._key(x_coord)](y_coord)
                     self.y_lookup[self._key(y_coord)] = CubicSpline(x_axis, values_by_x)
 
-
     def __call__(self, x_coord, y_coord):
         """
 
@@ -75,7 +79,7 @@ class SplineSurface(object):
         """
         return self.y_lookup[self._key(y_coord)](x_coord)
 
-    def axis(self, y_coord):
+    def _axis(self, y_coord):
         """
             Return the axis of the spline for co-ordinate y.
         Args:
@@ -96,4 +100,6 @@ class SplineSurface(object):
         Returns:
 
         """
-        return np.array([self.__call__(x, y_coord) for x in self.axis(y_coord)], dtype=np.float32)
+        return np.array([self.__call__(x, y_coord) for x in self._axis(y_coord)], dtype=np.float32)
+
+

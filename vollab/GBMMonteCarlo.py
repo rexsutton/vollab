@@ -62,11 +62,7 @@ class GBMMonteCarlo(object): #pylint: disable=too-many-instance-attributes
             num_paths: The number of sample paths.
             spot: The starting point of the process.
             drift: The drift of the process.
-            nu: The initial variance.
-            lmbda: The mean-reversion speed of volatility.
-            nu_bar: The long-run volatility.
-            eta: The volatility of volatility.
-            rho: The correlation between the process and it' volatility.
+            sigma: The volatility.
         """
         self.spot = spot
         self.drift = drift

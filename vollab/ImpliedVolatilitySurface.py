@@ -8,22 +8,15 @@
         1. For a given characteristic function use Fast Fourier Transform to get call price surface.
         2. Uses the Lets Be Rational for fast calculation of Black-Scholes implied volatility.
 
-    @article{jackel2015let,
-      title={Let's be rational},
-      author={J{\"a}ckel, Peter},
-      journal={Wilmott},
-      volume={2015},
-      number={75},
-      pages={40--53},
-      year={2015},
-      publisher={Wiley Online Library}
-    }
+    Uses:-
+    Jäckel, Peter. "Let's be rational." Wilmott 2015.75 (2015): 40-53.
 """
 
 import sys
 import numpy as np
 import lets_be_rational as lb
-import vollab.FFTEuropeanCallPrice as vl
+
+from .FFTEuropeanCallPrice import *
 
 
 def compute_smile(call_price_calculator,
@@ -60,7 +53,6 @@ def compute_smile(call_price_calculator,
     last_good_vol = 0.0
     # for selected strikes
     for strike, call_price in zip(call_price_calculator.strike_axis, call_prices):
-        # if vl.select_strike(strike, strike_lower, strike_upper):
         if strike_selector(strike):
             # calculate the implied vol
             implied_volatility = lb.implied_volatility_from_a_transformed_rational_guess(
@@ -99,7 +91,7 @@ def compute_implied_vol_surface(characteristic_function,
 
     """
     # create the call price calculator
-    call_price_calculator = vl.CallPriceCalculator(num_points=4096, lmbda=0.005, alpha=1.0)
+    call_price_calculator = CallPriceCalculator(num_points=4096, lmbda=0.005, alpha=1.0)
     # select the range of strikes to plot
     selected_strikes = [strike for strike in call_price_calculator.strike_axis
                         if strike_selector(strike)]
