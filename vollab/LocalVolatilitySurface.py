@@ -17,6 +17,9 @@ from scipy.interpolate import CubicSpline
 
 from .ImpliedVolatilitySurface import *
 
+from .SplineSurface import SplineSurface
+from .FFTEuropeanCallPrice import compute_call_prices_matrix
+
 
 def change_variables(market_params, maturity_time, strikes, smile):
     """
@@ -102,7 +105,7 @@ def compute_denominator_row(market_params, strikes, maturity_time, smile):
     log_strikes, variances = change_variables(market_params, maturity_time, strikes, smile)
     derivs_1, derivs_2 = compute_derivatives(log_strikes, variances)
     for log_strike, variance, deriv_1, deriv_2 in zip(log_strikes, variances, derivs_1, derivs_2):
-        row.append(1.0 / compute_denominator(log_strike, variance, deriv_1, deriv_2))
+        row.append(compute_denominator(log_strike, variance, deriv_1, deriv_2))
     return row
 
 
@@ -201,3 +204,43 @@ def compute_local_vol_matrix(characteristic_function,
             local_vol_surface[idx_tenor][idx_strike] = np.sqrt(dvariance_dtenor / denom)
 
     return strikes, maturity_times, local_vol_surface
+
+
+def compute_local_vol_spline_surface(characteristic_function,
+                                     market_params,
+                                     strike_selector,
+                                     maturity_times,
+                                     maturity_time_floor=0.25):
+    """
+    Compute the local volatility surface.
+
+    Args:
+        characteristic_function: The characteristic function.
+        market_params:The market parameters.
+        strike_selector: Predicate function for selecting strikes.
+        maturity_times: The maturity times of the surface.
+        maturity_time_floor: Times smaller than this will be extrapolated flat.
+
+    Returns: A tuple of: strikes, maturities, call prices, local vol as a spline surface
+
+    """
+    # calculate call prices
+    selected_strikes, maturity_times, call_prices_by_fft = \
+        compute_call_prices_matrix(characteristic_function,
+                                   market_params,
+                                   strike_selector,
+                                   maturity_times)
+    # calculate the local vol surface
+    floored_maturity_times = np.array([t for t in maturity_times if t > maturity_time_floor])
+    local_vol_matrix_results = compute_local_vol_matrix(characteristic_function,
+                                                        market_params,
+                                                        strike_selector,
+                                                        floored_maturity_times)
+    # make the spline surface
+    local_vol_spline_surface = SplineSurface(selected_strikes,
+                                             floored_maturity_times,
+                                             local_vol_matrix_results[2],
+                                             maturity_times)
+
+    return selected_strikes, maturity_times, call_prices_by_fft, local_vol_spline_surface
+

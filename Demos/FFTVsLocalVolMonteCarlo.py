@@ -10,6 +10,7 @@
 """
 import argparse
 import functools
+import inspect
 import json
 
 import matplotlib.pyplot as plt
@@ -19,15 +20,19 @@ import env
 import vollab as vl
 
 
-def setup_local_vol(model, params):
+def get_default_args(func):
+    signature = inspect.signature(func)
+    return {k: v.default for k, v in signature.parameters.items() if v.default is not inspect.Parameter.empty}
+
+
+def compare_fft_with_local_vol_mc(model, params):
     """
+    For the specified model compare plain vanilla option prices obtained via FFT,
+     with local volatility Monte Carlo.
 
     Args:
         model: A string identifying the model's characteristic function.
         params: A dictionary of parameter values used to override defaults.
-
-    Returns: The local volatility surface and matrix of call prices used to construct it.
-
     """
     # create market parameters
     market_params = vl.MarketParams()
@@ -41,52 +46,24 @@ def setup_local_vol(model, params):
                                         1.3 * market_params.spot)
     # generate a surface out to five years
     tenors = np.linspace(0.0, 50 * 0.1, 1 + 50)
-    # calculate call prices
-    selected_strikes, tenors, call_prices_by_fft = \
-        vl.compute_call_prices_matrix(characteristic_function,
-                                      market_params,
-                                      strike_selector,
-                                      tenors)
-    # calculate the local vol surface
-    floored_tenors = np.array([tenor for tenor in tenors if tenor > 0.25])
-    local_vol_matrix_results \
-        = vl.compute_local_vol_matrix(characteristic_function,
-                                      market_params,
-                                      strike_selector,
-                                      floored_tenors)
-    # make the spline surface
-    local_vol_spline_surface = vl.SplineSurface(selected_strikes,
-                                                floored_tenors,
-                                                local_vol_matrix_results[2],
-                                                tenors)
-
-    # print local_vol_spline_surface(market_params.spot, 0.0)
-    return selected_strikes, tenors, call_prices_by_fft, local_vol_spline_surface
-
-
-def compare_fft_with_local_vol_mc(model, params):
-    """
-    For the specified model compare plain vanilla option prices obtained via FFT,
-     with local volatility Monte Carlo.
-
-    Args:
-        model: A string identifying the model's characteristic function.
-        params: A dictionary of parameter values used to override defaults.
-    """
     selected_strikes, tenors, call_prices_by_fft, local_vol_spline_surface \
-        = setup_local_vol(model, params)
+        = vl.compute_local_vol_spline_surface(characteristic_function, market_params, strike_selector, tenors)
+
     # create the Monte Carlo
-    monte_carlo = vl.LocalVolMonteCarlo(local_vol_spline_surface)
-    monte_carlo.__dict__.update(params)
+    defaulted_params = get_default_args(vl.LocalVolMonteCarlo.create_with_constant_time_step)
+    defaulted_params.update(params)
+    monte_carlo = vl.LocalVolMonteCarlo.create_with_constant_time_step(local_vol_spline_surface, **defaulted_params)
     simulated_stock = monte_carlo.sample()[0]
-    vl.plot_paths(simulated_stock)
+    # vl.plot_paths(simulated_stock)
     # plot call prices and absolute error
     sim_call_prices = vl.compute_sim_call_prices(selected_strikes, simulated_stock)
     fig = plt.figure()
     vl.add_sub_surface_plot(fig, 1, 3, 1, selected_strikes, tenors, sim_call_prices.T,
                             "Monte Carlo.",
                             "Strike", "Maturity", "Price")
-    vl.plot_heat_map(selected_strikes, tenors, np.transpose(sim_call_prices - call_prices_by_fft),
+    vl.plot_heat_map(selected_strikes,
+                     tenors,
+                     np.transpose(sim_call_prices - call_prices_by_fft),
                      "Differences.",
                      "Strike", "Maturity")
     vl.add_sub_surface_plot(fig, 1, 3, 2, selected_strikes, tenors, np.transpose(call_prices_by_fft),

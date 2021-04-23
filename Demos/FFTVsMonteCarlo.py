@@ -10,6 +10,7 @@
 """
 import argparse
 import functools
+import inspect
 import json
 
 import matplotlib.pyplot as plt
@@ -19,15 +20,22 @@ import env
 import vollab as vl
 
 
+def get_default_args(func):
+    signature = inspect.signature(func)
+    return {k: v.default for k, v in signature.parameters.items() if v.default is not inspect.Parameter.empty}
+
+
 def _sample_black_scholes_monte_carlo(params):
-    monte_carlo = vl.GBMMonteCarlo()
-    monte_carlo.__dict__.update(params)
+    defaulted_params = get_default_args(vl.GBMMonteCarlo.create_with_constant_time_step)
+    defaulted_params.update(params)
+    monte_carlo = vl.GBMMonteCarlo.create_with_constant_time_step(**defaulted_params)
     return monte_carlo.time_axis, monte_carlo.sample()
 
 
 def _sample_heston_monte_carlo(params):
-    monte_carlo = vl.HestonMonteCarlo()
-    monte_carlo.__dict__.update(params)
+    defaulted_params = get_default_args(vl.HestonMonteCarlo.create_with_constant_time_step)
+    defaulted_params.update(params)
+    monte_carlo = vl.HestonMonteCarlo.create_with_constant_time_step(**defaulted_params)
     return monte_carlo.time_axis, monte_carlo.sample()[0]
 
 

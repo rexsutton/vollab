@@ -50,7 +50,7 @@ class SplineSurface(object):
         for y_coord, values in zip(y_axis, surface_matrix):
             self.y_lookup[self._key(y_coord)] = CubicSpline(x_axis, values)
 
-        if len(y_fine_axis) > 0:
+        if (y_fine_axis is not None) and (len(y_fine_axis) > 0):
             self.x_lookup = dict()
             values_by_y = np.empty([len(y_axis)])
             for x_coord in x_axis:

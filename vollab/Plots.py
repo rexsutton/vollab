@@ -3,13 +3,15 @@
 
     Copyright (c) Rex Sutton 2020.
 
-    Small re-usable functions.
+    Plotting functions.
 """
 
+import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import colors
 
 
 def plot_paths(paths):
@@ -50,7 +52,7 @@ def add_sub_surface_plot(fig, num_rows, num_cols, plot_number, x_axis, y_axis, z
     x_mesh, y_mesh = np.meshgrid(x_axis, y_axis, indexing=indexing)
     z_matrix = np.floor(np.array(z_values) / tol) * tol
     sub = fig.add_subplot(num_rows, num_cols, plot_number, projection='3d')
-    sub.plot_surface(x_mesh, y_mesh, z_matrix)
+    sub.plot_surface(x_mesh, y_mesh, z_matrix, cmap=matplotlib.cm.plasma)
     if title:
         sub.title.set_text(title)
     if x_label:
@@ -88,7 +90,8 @@ def plot_surface(x_axis, y_axis, z_values,
 
 def add_heat_map(fig, num_rows, num_cols, plot_number, x_axis, y_axis, z_values,
                  title=None, x_label=None, y_label=None,
-                 x_step=None, y_step=None):
+                 x_step=None, y_step=None,
+                 zero=False):
     """
         Plot a heat map using MatPlotLib.
         Default indexing is matrix.
@@ -106,9 +109,21 @@ def add_heat_map(fig, num_rows, num_cols, plot_number, x_axis, y_axis, z_values,
         y_label: The y label.
         x_step: The ticks on the x axis.
         y_step: The ticks on the y axis.
+        zero: If true normalize colours around zero.
     """
+    norm = None
+    if zero:
+        temp = z_values.T.flatten()
+        mn = np.amin(temp)
+        mx = np.amax(temp)
+        if (mn < 0.0) and (mx > 0.0):
+            mag = max(abs(mn), mx)
+            norm = colors.TwoSlopeNorm(vmin=-mag,
+                                       vcenter=0.,
+                                       vmax=mag)
+
     sub = fig.add_subplot(num_rows, num_cols, plot_number)
-    im = sub.imshow(z_values.T, cmap='jet', interpolation='nearest', origin='lower')
+    im = sub.imshow(z_values.T, cmap=matplotlib.cm.plasma, norm=norm, interpolation='nearest', origin='lower')
     if title:
         sub.title.set_text(title)
     if x_label:
@@ -136,7 +151,8 @@ def add_heat_map(fig, num_rows, num_cols, plot_number, x_axis, y_axis, z_values,
 
 def plot_heat_map(x_axis, y_axis, z_values,
                   title=None, x_label=None, y_label=None,
-                  x_step=None, y_step=None):
+                  x_step=None, y_step=None,
+                  zero=False):
     """
         Plot a surface using MatPlotLib.
         Default indexing is matrix.
@@ -149,8 +165,9 @@ def plot_heat_map(x_axis, y_axis, z_values,
         y_label: The y label.
         x_step: The ticks on the x axis.
         y_step: The ticks on the y axis.
+        zero: If true normalize colours around zero.
     """
     fig = plt.figure()
     add_heat_map(fig, 1, 1, 1, x_axis, y_axis, z_values,
                  title, x_label, y_label,
-                 x_step, y_step)
+                 x_step, y_step, zero)
