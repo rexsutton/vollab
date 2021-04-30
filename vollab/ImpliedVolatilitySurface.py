@@ -1,8 +1,6 @@
 """
-
-    !!! Not certified fit for any purpose, use at your own risk !!!
-
-    Copyright (c) Rex Sutton 2004-2017.
+    Authors: The Vollab Developers 2004-2021
+    License: BSD 3 clause
 
     Calculate the implied volatility surface in two steps:
         1. For a given characteristic function use Fast Fourier Transform to get call price surface.

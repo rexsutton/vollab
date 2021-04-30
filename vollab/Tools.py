@@ -1,10 +1,8 @@
 """
-    !!! Not certified fit for any purpose, use at your own risk !!!
-
-    Copyright (c) Rex Sutton 2016.
-
-    Small re-usable functions.
+    Authors: The Vollab Developers 2004-2021
+    License: BSD 3 clause
 """
+
 import datetime
 import numpy as np
 

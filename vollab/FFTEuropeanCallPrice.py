@@ -1,8 +1,7 @@
 """
 
-    !!! Not certified fit for any purpose, use at your own risk !!!
-
-    Copyright (c) Rex Sutton 2004-2017.
+     Authors: The Vollab Developers 2004-2021
+     License: BSD 3 clause
 
     Calculate the prices of european call options,
      for stochastic processes with known characteristic function using Fast Fourier Transform.

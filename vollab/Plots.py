@@ -1,10 +1,8 @@
 """
-    !!! Not certified fit for any purpose, use at your own risk !!!
-
-    Copyright (c) Rex Sutton 2020.
-
-    Plotting functions.
+    Authors: The Vollab Developers 2004-2021
+    License: BSD 3 clause
 """
+
 
 import matplotlib
 import numpy as np

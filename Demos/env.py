@@ -1,11 +1,6 @@
-#!/usr/bin/env python
 """
-
-    !!! Not certified fit for any purpose, use at your own risk !!!
-
-    Copyright (c) Rex Sutton 2004-2017.
-
-    Import this file to add ../ and ../../ to the path.
+    Authors: The Vollab Developers 2004-2021
+    License: BSD 3 clause
 """
 
 import sys

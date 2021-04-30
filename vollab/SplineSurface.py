@@ -1,10 +1,9 @@
 """
-    !!! Not certified fit for any purpose, use at your own risk !!!
-
-    Copyright (c) Rex Sutton 2004-2017.
+    Authors: The Vollab Developers 2004-2021
+    License: BSD 3 clause
 
     A two dimensional surface composed of cubic splines,
-     parallel with the x-axis at fixed y co-ordinates.
+    parallel with the x-axis at fixed y co-ordinates.
 
 """
 import numpy as np
